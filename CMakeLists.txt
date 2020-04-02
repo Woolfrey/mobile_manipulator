@@ -54,6 +54,7 @@ find_package(Eigen REQUIRED)
 ## Generate messages in the 'msg' folder
 add_message_files(
 	FILES
+	Control.msg
 	Thruster.msg
 	Vehicle.msg
 )
@@ -76,6 +77,7 @@ add_message_files(
 generate_messages(
 	DEPENDENCIES
 	geometry_msgs
+	sensor_msgs
 	std_msgs
 )
 
