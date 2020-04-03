@@ -1,0 +1,29 @@
+vehicle_name:
+
+ # Inertia properties
+ mass: 50.0
+ ixx: 0.5
+ ixy: 0.01
+ ixz: 0.01
+ iyy: 0.5
+ iyz: 0.01
+ izz: 0.5
+ 
+ # Thrusters
+ thruster1:
+   axis: [-1.0, 1.0, 0.0]
+   position: [0.5, 0.5, 0.0]
+   max: 10.0
+ thruster2:
+   axis: [1.0, 1.0, 0.0]
+   position: [0.5, -0.5, 0.0]
+   max: 10.0
+ thruster3:
+   axis: [-1.0, 1.0, 0.0]
+   position: [-0.5, -0.5, 0.0]
+   max: 10.0
+ thruster4:
+   axis: [1.0, 1.0, 0.0]
+   position: [-0.5, 0.5, 0.0]
+   max: 10.0
+

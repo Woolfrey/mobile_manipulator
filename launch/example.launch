@@ -1,0 +1,3 @@
+<launch>
+        <rosparam file="$(find mobile_manipulator)/params/vehicle_example.yaml"/>
+</launch>

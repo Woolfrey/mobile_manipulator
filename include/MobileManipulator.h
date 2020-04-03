@@ -1,8 +1,8 @@
 #include "Eigen/Dense"						// Required for matrix inversion
 #include "geometry_msgs/Accel.h"
-#include "mobile_manipulator/Control.h"
-#include "mobile_manipulator/Vehicle.h"
-#include "SerialLink.h"
+#include "mobile_manipulator/Control.h"				// Custom control message for both manipulator and vehicle
+#include "mobile_manipulator/Vehicle.h"				// Custom vehicle message
+#include "SerialLink.h"						// Serial link manipulator class
 
 class MobileManipulator
 {
