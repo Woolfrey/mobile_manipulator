@@ -2,13 +2,13 @@
 #include "geometry_msgs/Accel.h"
 #include "mobile_manipulator/Control.h"				// Custom control message for both manipulator and vehicle
 #include "mobile_manipulator/Vehicle.h"				// Custom vehicle message
-#include "SerialLink.h"						// Serial link manipulator class
+#include "SerialLink.h"						// Custom serial-link class
 
 class MobileManipulator
 {
 	public:
 		// Properties
-		geometry_msgs::Pose baseTF;			// Transform from vehicle origin to manipulator base
+		geometry_msgs::Pose base_transform;		// Transform from vehicle origin to manipulator base
 
 		mobile_manipulator::Vehicle vehicle;		// Vehicle object
 
@@ -16,7 +16,6 @@ class MobileManipulator
 
 		// Constructor(s)
 		MobileManipulator();
-		MobileManipulator(int Hz);
 
 		// Get Functions
 		mobile_manipulator::Control rmrc(const geometry_msgs::Pose &pos, 
@@ -34,10 +33,10 @@ class MobileManipulator
 		// Properties
 		Eigen::MatrixXd A;				// B*T
 		Eigen::Matrix<double,6,6> B;			// Base velocity mapping to end-effector
-		Eigen::MatrixXd J;
+		Eigen::MatrixXd J;				// Manipulator Jacobian
 		Eigen::MatrixXd T;				// Thruster conversion matrix
 		Eigen::MatrixXd M1, M3;				// For kinematics calcs
-		Eigen::Matrix<double,6,6> M2;
+		Eigen::Matrix<double,6,6> M2;			// For kinematics calcs
 
 		Eigen::MatrixXd Wq;				// Joint weighting matrix 
 		Eigen::MatrixXd Wu;				// Thruster weighting matrix
@@ -55,16 +54,7 @@ class MobileManipulator
 
 MobileManipulator::MobileManipulator()
 {
-	ROS_INFO_STREAM("Default control frequency is 100Hz. Is this OK? (Y/n):");
-	char input;
-	std::cin >> input;
-	if(input == 'Y') MobileManipulator(100);
-}
-
-MobileManipulator::MobileManipulator(int Hz)
-{
 	// Step 1: Create the serial_link object
-	  /*** Code goes here ***/
 
 	// Step 2: Resize any dynamic memory arrays
 
@@ -77,7 +67,7 @@ MobileManipulator::MobileManipulator(int Hz)
 	this->B.setIdentity();					// Maps vehicle velocity to end-effector velocity
 	this->T.resize(6,this->m);				// Maps thruster control to body velocity
 
-	this->M1.resize(this->m + this->arm.n,6);		// For kinematics calcs
+	//this->M1.resize(this->m + this->arm.n,6);		// For kinematics calcs
 	this->M3.resize(this->m + this->arm.n,6);		// M3 = M1*M2
 
 	this->Wq = 10*Eigen::MatrixXd::Identity(this->arm.n, this->arm.n); // Joint weighting matrix
@@ -109,7 +99,7 @@ void MobileManipulator::updateState(const geometry_msgs::PoseStamped &input,
 	this->vehicle.tf = input;							// Assign pose
 	this->vehicle.vel = vel;							// Assign velocity
 	this->vehicle.accel = accel;							// Assign acceleration
-	this->arm.updateState(jointState,multiplyPose(input.pose,this->baseTF));	
+	this->arm.updateState(jointState,multiplyPose(input.pose,this->base_transform));	
 
 	// Update skew-symmetric component of base velocity mapping
 	double x = this->arm.FK.poses[this->arm.n].position.x - this->vehicle.tf.pose.position.x;
@@ -132,8 +122,8 @@ mobile_manipulator::Control MobileManipulator::rmrc(const geometry_msgs::Pose &p
 	// Update the joint weight based on proximity to joint limits
 	for(int i = 0; i < this->arm.n; i++)
 	{
-		this->Wq(i,i) = getJointWeight(this->arm.jointState.position[i],
-					       this->arm.jointState.velocity[i],
+		this->Wq(i,i) = getJointWeight(this->arm.joint_state.position[i],
+					       this->arm.joint_state.velocity[i],
 					       this->arm.serial.joint[i]);
 	}
 
@@ -153,7 +143,7 @@ mobile_manipulator::Control MobileManipulator::rmrc(const geometry_msgs::Pose &p
 	this->M3 = M1*M2.inverse();					// This is the total pseudoinverse
 
 
-	// Compute pose error and append feedback to velocity control
+	// Compute pose error and add feedback to velocity control
 	geometry_msgs::Pose error = getPoseError(pos, this->arm.FK.poses[this->arm.n]);
 	vel.linear.x += 0.9*error.position.x;
 	vel.linear.y += 0.9*error.position.y;
@@ -176,12 +166,12 @@ mobile_manipulator::Control MobileManipulator::rmrc(const geometry_msgs::Pose &p
 	// Required thruster control
 	for(int i = this->arm.n; i < this->m + this->arm.n; i++)
 	{
-		control_msg.jointControl.velocity[i] = M3(i,0)*vel.linear.x
-						     + M3(i,1)*vel.linear.y
-						     + M3(i,2)*vel.linear.z
-						     + M3(i,3)*vel.angular.x
-						     + M3(i,4)*vel.angular.y
-						     + M3(i,5)*vel.angular.z;
+		control_msg.thrusterControl[i] 	= M3(i,0)*vel.linear.x
+						+ M3(i,1)*vel.linear.y
+						+ M3(i,2)*vel.linear.z
+						+ M3(i,3)*vel.angular.x
+						+ M3(i,4)*vel.angular.y
+						+ M3(i,5)*vel.angular.z;
 	}
 
 	return control_msg;

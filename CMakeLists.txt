@@ -8,13 +8,14 @@ project(mobile_manipulator)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-	cmake_modules
+	cmake_modules				# Custom message generation
   	geometry_msgs
 	message_generation
 	roscpp
-	serial_link
+	serial_link				# Custom package
   	sensor_msgs
   	std_msgs
+	urdf					# Not needed directly in this package, but required from SerialLink.h
 )
 find_package(Eigen REQUIRED)
 
